@@ -137,7 +137,9 @@ no_mail
 import mailbox
 from imaplib import IMAP4_SSL
 from os.path import exists, expanduser, expandvars
+
 STRING_MISSING = 'missing {} {}'
+STRING_RESERVED = 'reserved name {{{}}}'
 
 
 class Py3status:
@@ -155,11 +157,22 @@ class Py3status:
 
         self.mailboxes = {}
         mailboxes = ['Maildir', 'mbox', 'mh', 'Babyl', 'MMDF', 'IMAP']
+        lowercased_names = [x.lower() for x in mailboxes]
+        reserved_names = lowercased_names.copy() + ['mail']
+        numbered_names = reserved_names.copy()
         for mail, accounts in self.accounts.items():
-            if mail not in [x.lower() for x in mailboxes]:
+            if mail not in lowercased_names:
                 continue
             self.mailboxes[mail] = []
             for account in accounts:
+                if 'name' in account:
+                    name = account['name']
+                    if name in reserved_names:
+                        raise Exception(STRING_RESERVED.format(name))
+                    if name[-1].isdigit():
+                        if any(name.startswith(x) for x in numbered_names):
+                            raise Exception(STRING_RESERVED.format(name))
+                    reserved_names.append(name)
                 account.setdefault('urgent', True)
                 if mail == 'imap':
                     for v in ['user', 'password', 'server']:
