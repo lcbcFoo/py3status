@@ -21,7 +21,9 @@ SAMPLE OUTPUT
 """
 
 import json
+from datetime import datetime
 STRING_NOT_INSTALLED = 'not installed'
+
 
 
 class Py3status:
@@ -42,7 +44,14 @@ class Py3status:
 
     def taskWarrior(self):
         def describeTask(taskObj):
-            return str(taskObj['id']) + ' ' + taskObj['description']
+            if('due' in taskObj):
+                date_time = str(taskObj['due'])
+                date = datetime(int(date_time[:4]), int(date_time[4:6]), int(date_time[6:8]))
+                time = date_time[9:15]
+                date_diff = date - datetime.now()
+                return str(taskObj['description']) + ' - ' + str(date_diff.days) + 'd' 
+            else:
+                return str(taskObj['description'])
 
         task_json = json.loads(self.py3.command_output(self.task_command))
         task_result = ', '.join(map(describeTask, task_json))
